@@ -23,7 +23,8 @@ long consumer_period; // Period of consumer (millis)
 long producer_period; // Period of producer (millis)
 
 // Main consumer. Get consumer id as argument.
-void *main_consumer(void *arg) {
+void *main_consumer(void *arg)
+{
   int i;
   int *id = (int *)arg;
   int *data;
@@ -34,12 +35,14 @@ void *main_consumer(void *arg) {
   // Get start time t0, the deadline will be t0 + T
   struct timespec deadline = get_start_time();
 
-  for (i = 0; i < (n_values / n_consumers); i++) {
+  for (i = 0; i < (n_values / n_consumers); i++)
+  {
     // Behave as a periodic task. the current deadline corresponds to
     // the previous deadline + one period
     add_millis_to_timespec(&deadline, consumer_period);
     resynchronize();
-    switch (sem_consumers) {
+    switch (sem_consumers)
+    {
     case BLOCKING:
       data = (int *)protected_buffer_get(protected_buffer);
       break;
@@ -60,7 +63,8 @@ void *main_consumer(void *arg) {
 }
 
 // Main producer. Get producer id as argument.
-void *main_producer(void *arg) {
+void *main_producer(void *arg)
+{
   int i;
   int *id = (int *)arg;
   int *data;
@@ -72,7 +76,8 @@ void *main_producer(void *arg) {
   // Get start time t0, the deadline will be t0 + T
   struct timespec deadline = get_start_time();
 
-  for (i = 0; i < (n_values / n_producers); i++) {
+  for (i = 0; i < (n_values / n_producers); i++)
+  {
 
     // Allocate data in order to produce and consume it
     data = (int *)malloc(sizeof(int));
@@ -86,7 +91,8 @@ void *main_producer(void *arg) {
     add_millis_to_timespec(&deadline, producer_period);
     resynchronize();
 
-    switch (sem_producers) {
+    switch (sem_producers)
+    {
     case BLOCKING:
       protected_buffer_put(protected_buffer, data);
       done = 1;
@@ -112,12 +118,14 @@ void *main_producer(void *arg) {
 // Read scenario file
 void read_file(char *filename);
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
   int i;
   int *data;
   char *task_name;
 
-  if (argc != 2) {
+  if (argc != 2)
+  {
     printf("Usage : %s <scenario file>\n", argv[0]);
     exit(1);
   }
@@ -128,30 +136,51 @@ int main(int argc, char *argv[]) {
 
   protected_buffer = protected_buffer_init(sem_impl, buffer_size);
 
-
   set_start_time();
+
+  long long N = n_consumers + n_producers;
+  int *arg[2];
+
+  tasks = malloc(N * sizeof(pthread_t));
 
   // Create consumers and then producers. Pass the *value* of i
   // as parametre of the main procedure (main_consumer or main_producer).
-  for (i = 0; i < n_consumers; i++) {
+  for (i = 0; i < n_consumers; i++)
+  {
     asprintf(&task_name, "consumer %02d", i);
     set_task_name(i, task_name);
+
+    arg[0] = malloc(sizeof(int));
+    *arg[0] = i;
+
+    pthread_create(&tasks[i], NULL, &main_consumer, arg[0]);
   }
-  for (i = n_consumers; i < n_producers + n_consumers; i++) {
+
+  for (i = n_consumers; i < N; i++)
+  {
     asprintf(&task_name, "producer %02d", i);
     set_task_name(i, task_name);
+
+    arg[1] = malloc(sizeof(int));
+    *arg[1] = i;
+
+    pthread_create(&tasks[i], NULL, &main_producer, arg[1]);
   }
 
   // Wait for producers and consumers termination
-  for (i = 0; i < n_consumers + n_producers; i++) {
+  for (i = 0; i < N; i++)
+  {
+    pthread_join(tasks[i], NULL);
   }
 }
 
-void read_file(char *filename) {
+void read_file(char *filename)
+{
   FILE *file;
 
   file = fopen(filename, "r");
-  if (file == NULL) {
+  if (file == NULL)
+  {
     printf("no such file %s\n", filename);
     exit(1);
   }
