@@ -1,3 +1,6 @@
 TP01/vector_reduction
 TP01/vector_addition
 TP01/matrix_vector_multiply
+TP03/src/*.o
+TP03/src/deps
+TP03/src/main_protected_buffer
