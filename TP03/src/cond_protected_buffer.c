@@ -130,7 +130,7 @@ int cond_protected_buffer_add(protected_buffer_t *b, void *d)
 
   // Leave mutual exclusion
   pthread_mutex_unlock(&b->m);
-  
+
   return done;
 }
 
@@ -145,13 +145,22 @@ void *cond_protected_buffer_poll(protected_buffer_t *b,
   int rc = 0;
 
   // Enter mutual exclusion
+  pthread_mutex_timedlock(&b->m, abstime);
 
   // Wait until there is a full slot to get data from the unprotected
   // circular buffer  (circular_buffer_get) but waits no longer than
   // the given timeout.
+  while (sizeof(b->buffer) == 0)
+  {
+    rc = pthread_cond_timedwait(&b->v_full, &b->m, abstime);
+    if (rc != 0)
+      break;
+  }
 
   // Signal or broadcast that an empty slot is available in the
   // unprotected circular buffer (if needed)
+  if (b->buffer->size == b->buffer->max_size)
+    pthread_cond_signal(&b->v_empty);
 
   d = circular_buffer_get(b->buffer);
   if (d == NULL)
@@ -160,6 +169,7 @@ void *cond_protected_buffer_poll(protected_buffer_t *b,
     mtxprintf(pb_debug, "poll (T) - data=%d\n", *(int *)d);
 
   // Leave mutual exclusion
+  pthread_mutex_unlock(&b->m);
 
   return d;
 }
@@ -175,13 +185,22 @@ int cond_protected_buffer_offer(protected_buffer_t *b, void *d,
   int done = 0;
 
   // Enter mutual exclusion
+  pthread_mutex_timedlock(&b->m, abstime);
 
   // Wait until there is an empty slot to put data in the unprotected
   // circular buffer (circular_buffer_put) but waits no longer than
   // the given timeout.
+  while (b->buffer->size == b->buffer->max_size)
+  {
+    rc = pthread_cond_timedwait(&b->v_empty, &b->m, abstime);
+    if (rc != 0)
+      break;
+  }
 
   // Signal or broadcast that a full slot is available in the
   // unprotected circular buffer (if needed)
+  if (b->buffer->size)
+    pthread_cond_broadcast(&b->v_full);
 
   done = circular_buffer_put(b->buffer, d);
   if (!done)
