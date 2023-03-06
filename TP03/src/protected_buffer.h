@@ -12,9 +12,13 @@ extern long sem_impl; // Use the semaphore implementation or not
 extern int pb_debug;
 
 // Protected buffer structure used for both implemantations.
-typedef struct {
+typedef struct
+{
   long sem_impl;
   circular_buffer_t *buffer;
+  pthread_mutex_t m;
+  pthread_cond_t v_full;
+  pthread_cond_t v_empty;
 } protected_buffer_t;
 
 // Initialise the protected buffer structure above. sem_impl specifies

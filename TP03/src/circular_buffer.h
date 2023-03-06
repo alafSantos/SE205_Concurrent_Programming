@@ -1,14 +1,9 @@
 #ifndef CIRCULAR_BUFFER_H
 #define CIRCULAR_BUFFER_H
 
-#include <pthread.h>
-
 typedef struct {
   int first, last, size, max_size;
   void ** buffer;
-  pthread_mutex_t m;
-  pthread_cond_t v_full;
-  pthread_cond_t v_empty;
 } circular_buffer_t;
 
 // Allocate and initialize the circular buffer structure
