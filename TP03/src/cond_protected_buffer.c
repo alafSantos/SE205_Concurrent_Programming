@@ -66,7 +66,8 @@ void cond_protected_buffer_put(protected_buffer_t *b, void *d)
 
   // Signal or broadcast that a full slot is available in the
   // unprotected circular buffer (if needed)
-  pthread_cond_broadcast(&b->v_full);
+  if (!b->buffer->size)
+    pthread_cond_broadcast(&b->v_full);
 
   circular_buffer_put(b->buffer, d);
   if (d == NULL)
@@ -115,7 +116,8 @@ int cond_protected_buffer_add(protected_buffer_t *b, void *d)
 
   // Signal or broadcast that a full slot is available in the
   // unprotected circular buffer (if needed)
-  pthread_cond_broadcast(&b->v_full);
+  if (!b->buffer->size)
+    pthread_cond_broadcast(&b->v_full);
 
   done = circular_buffer_put(b->buffer, d);
   if (!done)
@@ -197,7 +199,8 @@ int cond_protected_buffer_offer(protected_buffer_t *b, void *d,
 
   // Signal or broadcast that a full slot is available in the
   // unprotected circular buffer (if needed)
-  pthread_cond_broadcast(&b->v_full);
+  if (!b->buffer->size)
+    pthread_cond_broadcast(&b->v_full);
 
   done = circular_buffer_put(b->buffer, d);
   if (!done)

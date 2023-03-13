@@ -9,6 +9,8 @@
 
 #include "utils.h"
 
+// #define QUESTION_1_5
+
 pthread_key_t task_info_key;
 
 // Start time as a timespec
@@ -102,6 +104,8 @@ void add_millis_to_timespec(struct timespec *ts, long msec) {
 // Delay until an absolute time. Translate the absolute time into a
 // relative one and use nanosleep. This is incorrect (we fix that).
 void delay_until(struct timespec *absolute_time) {
+
+  #ifndef QUESTION_1_5
   struct timeval tv_now;
   struct timespec ts_now;
   struct timespec relative_time;
@@ -118,6 +122,10 @@ void delay_until(struct timespec *absolute_time) {
     return;
 
   nanosleep(&relative_time, NULL);
+  #endif
+  #ifdef QUESTION_1_5
+
+  #endif
 }
 
 // Compute time elapsed from start time
