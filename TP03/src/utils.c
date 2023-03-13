@@ -9,7 +9,7 @@
 
 #include "utils.h"
 
-// #define QUESTION_1_5
+#define QUESTION_1_5
 
 pthread_key_t task_info_key;
 
@@ -18,7 +18,8 @@ struct timespec start_time;
 pthread_mutex_t resync_mutex;
 pthread_cond_t resync_condvar;
 
-void init_utils() {
+void init_utils()
+{
   pthread_key_create(&task_info_key, NULL);
   pthread_mutex_init(&resync_mutex, NULL);
   pthread_cond_init(&resync_condvar, NULL);
@@ -36,7 +37,8 @@ void init_utils() {
 char **task_names;
 int task_names_length = 0;
 
-void resynchronize() {
+void resynchronize()
+{
   int *id = (int *)pthread_getspecific(task_info_key);
   struct timeval tv_now;
   struct timespec ts_resync;
@@ -54,8 +56,10 @@ char *get_task_name(int id) { return task_names[id]; }
 
 // Store task name in task names at index id
 // Extend task names if needed
-void set_task_name(int id, char *name) {
-  if (task_names_length <= id) {
+void set_task_name(int id, char *name)
+{
+  if (task_names_length <= id)
+  {
     task_names_length = id + 1;
     task_names =
         (char **)realloc(task_names, task_names_length * sizeof(char *));
@@ -64,19 +68,22 @@ void set_task_name(int id, char *name) {
 }
 
 // Store task id as a private data
-int get_current_task_id() {
+int get_current_task_id()
+{
   int *id = (int *)pthread_getspecific(task_info_key);
   return *id;
 };
 
 // Store task id as a private data
-void set_current_task_id(int *id) {
+void set_current_task_id(int *id)
+{
   pthread_setspecific(task_info_key, (void *)id);
 }
 
 char *get_current_task_name() { return get_task_name(get_current_task_id()); }
 
-void mtxprintf(int debug, char *format, ...) {
+void mtxprintf(int debug, char *format, ...)
+{
   va_list arglist;
   if (!debug)
     return;
@@ -90,11 +97,13 @@ void mtxprintf(int debug, char *format, ...) {
 }
 
 // Add msec milliseconds to timespec ts (seconds, nanoseconds)
-void add_millis_to_timespec(struct timespec *ts, long msec) {
+void add_millis_to_timespec(struct timespec *ts, long msec)
+{
   long nsec = (msec % (long)1E3) * 1E6;
   long sec = msec / 1E3;
   ts->tv_nsec = ts->tv_nsec + nsec;
-  if (1E9 <= ts->tv_nsec) {
+  if (1E9 <= ts->tv_nsec)
+  {
     ts->tv_nsec = ts->tv_nsec - 1E9;
     ts->tv_sec++;
   }
@@ -103,9 +112,10 @@ void add_millis_to_timespec(struct timespec *ts, long msec) {
 
 // Delay until an absolute time. Translate the absolute time into a
 // relative one and use nanosleep. This is incorrect (we fix that).
-void delay_until(struct timespec *absolute_time) {
+void delay_until(struct timespec *absolute_time)
+{
 
-  #ifndef QUESTION_1_5
+#ifndef QUESTION_1_5
   struct timeval tv_now;
   struct timespec ts_now;
   struct timespec relative_time;
@@ -114,7 +124,8 @@ void delay_until(struct timespec *absolute_time) {
   TIMEVAL_TO_TIMESPEC(&tv_now, &ts_now);
   relative_time.tv_nsec = absolute_time->tv_nsec - ts_now.tv_nsec;
   relative_time.tv_sec = absolute_time->tv_sec - ts_now.tv_sec;
-  if (relative_time.tv_nsec < 0) {
+  if (relative_time.tv_nsec < 0)
+  {
     relative_time.tv_nsec = 1E9 + relative_time.tv_nsec;
     relative_time.tv_sec--;
   }
@@ -122,14 +133,23 @@ void delay_until(struct timespec *absolute_time) {
     return;
 
   nanosleep(&relative_time, NULL);
-  #endif
-  #ifdef QUESTION_1_5
+#endif
+#ifdef QUESTION_1_5
+  pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
+  pthread_cond_t v = PTHREAD_COND_INITIALIZER;
 
-  #endif
+  pthread_mutex_init(&m, NULL);
+  pthread_cond_init(&v, NULL);
+
+  pthread_mutex_lock(&m);
+  pthread_cond_timedwait(&v, &m, absolute_time);
+  pthread_mutex_unlock(&m);
+#endif
 }
 
 // Compute time elapsed from start time
-long relative_clock() {
+long relative_clock()
+{
   struct timeval tv_now;
   struct timespec ts_now;
 
@@ -138,7 +158,8 @@ long relative_clock() {
 
   ts_now.tv_nsec = ts_now.tv_nsec - start_time.tv_nsec;
   ts_now.tv_sec = ts_now.tv_sec - start_time.tv_sec;
-  if (ts_now.tv_nsec < 0) {
+  if (ts_now.tv_nsec < 0)
+  {
     ts_now.tv_sec = ts_now.tv_sec - 1;
     ts_now.tv_nsec = ts_now.tv_nsec + 1E9;
   }
@@ -149,7 +170,8 @@ long relative_clock() {
 struct timespec get_start_time() { return start_time; }
 
 // Store current time as the start time
-void set_start_time() {
+void set_start_time()
+{
   struct timeval tv_start_time; // start time as a timeval
 
   gettimeofday(&tv_start_time, NULL);
@@ -158,12 +180,14 @@ void set_start_time() {
 
 // Read string in file f and store it in s. If there is an error,
 // provide filename and line number (file:line).
-int get_string(FILE *f, char *s, char *file, int line) {
+int get_string(FILE *f, char *s, char *file, int line)
+{
   char b[64];
   char *c;
   ;
 
-  while (fgets(b, 64, f) != NULL) {
+  while (fgets(b, 64, f) != NULL)
+  {
     c = strchr(b, '\n');
     *c = '\0';
     if (strcmp(s, b) == 0)
@@ -176,12 +200,14 @@ int get_string(FILE *f, char *s, char *file, int line) {
 
 // Read long in file f and store it in l. If there is an error,
 // provide filename and line number (file:line).
-int get_long(FILE *f, long *l, char *file, int line) {
+int get_long(FILE *f, long *l, char *file, int line)
+{
   char b[64];
   char *c;
   ;
 
-  if (fgets(b, 64, f) != NULL) {
+  if (fgets(b, 64, f) != NULL)
+  {
     c = strchr(b, '\n');
     *c = '\0';
     *l = strtol(b, NULL, 10);
@@ -193,13 +219,15 @@ int get_long(FILE *f, long *l, char *file, int line) {
 
 #ifdef DARWIN
 int pthread_mutex_timedlock(pthread_mutex_t *mutex,
-                            const struct timespec *abs_timeout) {
+                            const struct timespec *abs_timeout)
+{
   int rc;
   struct timeval tv_now;
   struct timespec ts_now;
   struct timespec ts_sleep;
 
-  while ((rc = pthread_mutex_trylock(mutex)) == EBUSY) {
+  while ((rc = pthread_mutex_trylock(mutex)) == EBUSY)
+  {
     // Poll every 1ms
     gettimeofday(&tv_now, NULL);
     TIMEVAL_TO_TIMESPEC(&tv_now, &ts_now);
@@ -214,13 +242,15 @@ int pthread_mutex_timedlock(pthread_mutex_t *mutex,
   return rc;
 }
 
-int sem_timedwait(sem_t *restrict sem, const struct timespec *abs_timeout) {
+int sem_timedwait(sem_t *restrict sem, const struct timespec *abs_timeout)
+{
   int rc;
   struct timeval tv_now;
   struct timespec ts_now;
   struct timespec ts_sleep;
 
-  while ((rc = sem_trywait(sem)) != 0) {
+  while ((rc = sem_trywait(sem)) != 0)
+  {
     // Poll every 1ms
     gettimeofday(&tv_now, NULL);
     TIMEVAL_TO_TIMESPEC(&tv_now, &ts_now);
