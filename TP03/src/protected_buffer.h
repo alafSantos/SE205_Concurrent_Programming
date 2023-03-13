@@ -16,9 +16,17 @@ typedef struct
 {
   long sem_impl;
   circular_buffer_t *buffer;
+
+  /*1.2*/
   pthread_mutex_t m;
   pthread_cond_t v_full;
   pthread_cond_t v_empty;
+
+  /*1.6*/
+  sem_t *fullSlots;
+  sem_t *emptySlots;
+  sem_t *mutex;
+
 } protected_buffer_t;
 
 // Initialise the protected buffer structure above. sem_impl specifies
