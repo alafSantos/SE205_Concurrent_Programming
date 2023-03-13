@@ -22,12 +22,24 @@ public class BoundedBufferMain {
         // Create producers and then consumers
         // Create consumers
         for (int i = 0; i < (int) Utils.nConsumers; i++) {
-            new Thread(consumers[i]).start();
+            Thread objt = new Thread(consumers[i]);
+            objt.start();
+            try {
+                objt.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
 
         // Create producers
         for (int i = 0; i < (int) Utils.nProducers; i++) {
-            new Thread(producers[i]).start();
+            Thread objt = new Thread(producers[i]);
+            objt.start();
+            try {
+                objt.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 }
