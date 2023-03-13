@@ -11,6 +11,7 @@
 
 #define EMPTY_SLOTS_NAME "/empty_slots"
 #define FULL_SLOTS_NAME "/full_slots"
+#define MUTEX_NAME "/mutex"
 
 // Initialise the protected buffer structure above.
 protected_buffer_t *sem_protected_buffer_init(int length)
@@ -22,11 +23,12 @@ protected_buffer_t *sem_protected_buffer_init(int length)
   // Use these filenames as named semaphores
   sem_unlink(EMPTY_SLOTS_NAME);
   sem_unlink(FULL_SLOTS_NAME);
+  sem_unlink(MUTEX_NAME);
 
   // Open the semaphores using the filenames above
-  b->mutex = sem_open("/mutex", O_CREAT, 777, 1);
+  b->mutex = sem_open(MUTEX_NAME, O_CREAT, 777, 1);
   b->fullSlots = sem_open(FULL_SLOTS_NAME, O_CREAT, 777, 0);
-  b->emptySlots = sem_open(EMPTY_SLOTS_NAME, O_CREAT, 777, b->buffer->size);
+  b->emptySlots = sem_open(EMPTY_SLOTS_NAME, O_CREAT, 777, b->buffer->max_size);
 
   return b;
 }
