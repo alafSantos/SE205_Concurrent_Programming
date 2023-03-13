@@ -5,3 +5,4 @@ TP03/src/*.o
 TP03/src/deps
 TP03/src/main_protected_buffer
 .vscode/settings.json
+TP04/src/*.class
