@@ -4,6 +4,8 @@ import java.util.concurrent.TimeUnit;
 
 class NatBoundedBuffer extends BoundedBuffer {
 
+   // Lock mutex = new ReentrantLock();
+
     // Initialise the protected buffer structure above. 
     NatBoundedBuffer (int maxSize) {
         super(maxSize);
@@ -15,6 +17,7 @@ class NatBoundedBuffer extends BoundedBuffer {
        Object value;
 
        // Enter mutual exclusion
+      //  mutex.lock();
             
           // Wait until there is a full slot available.
 
@@ -22,7 +25,8 @@ class NatBoundedBuffer extends BoundedBuffer {
 
           return super.get();
 
-          // Leave mutual exclusion
+      // Leave mutual exclusion
+      // mutex.unlock();
     }
 
     // Insert an element into buffer. If the attempted operation is
