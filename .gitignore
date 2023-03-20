@@ -1,8 +1,9 @@
 TP01/vector_reduction
 TP01/vector_addition
 TP01/matrix_vector_multiply
-TP03/src/*.o
-TP03/src/deps
+*/src/*.o
 TP03/src/main_protected_buffer
 .vscode/settings.json
 TP04/src/*.class
+*/*/deps
+TP05/src/main_executor
