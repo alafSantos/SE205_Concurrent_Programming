@@ -23,6 +23,8 @@ typedef struct {
   int completed;
   callable_t *callable;
   void *result;
+  pthread_mutex_t m;
+  pthread_cond_t v;
 } future_t;
 
 extern future_t shutdown_future;
