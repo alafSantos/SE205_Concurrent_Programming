@@ -65,6 +65,9 @@ future_t *submit_callable(executor_t *executor, callable_t *callable)
     function get_callable_result.
   */
 
+  pthread_mutex_init(&future->m, NULL); 
+  pthread_cond_init(&future->v, NULL);
+
   /*
     Try to create a thread, but do not exceed core_pool_size
     (last parameter force set to false).
@@ -76,6 +79,8 @@ future_t *submit_callable(executor_t *executor, callable_t *callable)
     When there are already enough created threads, queue the callable
     in the blocking queue.
   */
+  if (protected_buffer_add(executor->futures, future))
+    return future;
 
   /*
     When the queue is full, pop the first future from the queue and
@@ -92,6 +97,8 @@ future_t *submit_callable(executor_t *executor, callable_t *callable)
     Try to create a thread, but allow to exceed core_pool_size (last
     parameter set to true).
   */
+  if (pool_thread_create(executor->thread_pool, pool_thread_main, future, true))
+    return future;
 
   /*
     We failed. The executor is overrun.
