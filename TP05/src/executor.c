@@ -65,7 +65,7 @@ future_t *submit_callable(executor_t *executor, callable_t *callable)
     function get_callable_result.
   */
 
-  pthread_mutex_init(&future->m, NULL); 
+  pthread_mutex_init(&future->m, NULL);
   pthread_cond_init(&future->v, NULL);
 
   /*
@@ -216,6 +216,7 @@ void *pool_thread_main(void *arg)
           add another shutdown future to the queue to unblock another thread
           and force it to terminate.
         */
+        future = protected_buffer_get(executor->futures);
         if (is_shutdown(future))
         {
           pool_thread_terminate(executor->thread_pool);
