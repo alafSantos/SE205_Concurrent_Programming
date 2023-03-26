@@ -91,6 +91,8 @@ future_t *submit_callable(executor_t *executor, callable_t *callable)
   {
     protected_buffer_add(executor->futures, future);
     future = first;
+
+    pool_thread_create(executor->thread_pool, pool_thread_main, future, 0); // 1.5
   }
 
   /*

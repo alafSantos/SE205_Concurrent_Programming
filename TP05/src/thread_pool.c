@@ -78,6 +78,16 @@ int pool_thread_create(thread_pool_t *thread_pool, main_func_t main,
     extended_main_params->is_core = status;
     extended_main_params->params = main_params;
     extended_main_params->id = thread_pool->size;
+
+    // for a thread to be created when the number of threads created is greater than or equal
+    // to core_pool_size, when this number is lower than max_pool_size and when the force parameter is true
+    if (pthread_create(&thread, NULL, main, extended_main_params) != 0) // 1.5
+    {
+      thread_pool->size--;
+      perror("pthread_create() error\n");
+      exit(1);
+    }
+
     asprintf(&task_name, "temp %02d", extended_main_params->id);
     set_task_name(extended_main_params->id, task_name);
   }
