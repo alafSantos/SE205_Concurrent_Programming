@@ -5,6 +5,8 @@
 #include "executor.h"
 #include "utils.h"
 
+#define QUESTION_1_4 // added after question 1.4
+
 int ex_debug = 0;
 
 /*
@@ -218,7 +220,9 @@ void *pool_thread_main(void *arg)
           add another shutdown future to the queue to unblock another thread
           and force it to terminate.
         */
+#ifdef QUESTION_1_4
         future = protected_buffer_get(executor->futures);
+#endif
         if (is_shutdown(future))
         {
           pool_thread_terminate(executor->thread_pool);
