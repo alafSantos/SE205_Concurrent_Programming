@@ -245,9 +245,18 @@ void *pool_thread_main(void *arg)
           There is no callable to handle after timeout, remove the current
           pool thread from the pool. If it is successful, terminate thread.
         */
+        struct timespec timeout; // relative delay
+        struct timeval timenow; // absolute delay
+        
+        gettimeofday(&timenow, NULL); // time now
+        TIMEVAL_TO_TIMESPEC(&timenow, &timeout); // from util.h
+        
+        add_millis_to_timespec(&timeout, executor->keep_alive_time); // Add msec milliseconds to timespec ts (seconds, nanoseconds)
+        future = protected_buffer_poll(executor->futures, &timeout); // Extract an element from buffer (it waits no longer than timeout)
+
         if (future == NULL)
         {
-          pool_thread_terminate(executor->thread_pool);
+          pool_thread_terminate(executor->thread_pool); // Decrease thread pool size and broadcast update
           terminate = true;
         }
         /*
