@@ -60,7 +60,7 @@ int pool_thread_create(thread_pool_t *thread_pool, main_func_t main,
     extended_main_params->id = thread_pool->size;
 
     // Create a thread to execute the main function passed as parameters
-    if (pthread_create(&thread, NULL, main, extended_main_params) != 0)
+    if (pthread_create(&thread, NULL, main, extended_main_params))
     {
       thread_pool->size--;
       perror("pthread_create() error\n");
@@ -82,7 +82,7 @@ int pool_thread_create(thread_pool_t *thread_pool, main_func_t main,
 
     // for a thread to be created when the number of threads created is greater than or equal
     // to core_pool_size, when this number is lower than max_pool_size and when the force parameter is true
-    if (pthread_create(&thread, NULL, main, extended_main_params) != 0) // 1.5
+    if (pthread_create(&thread, NULL, main, extended_main_params)) // 1.5
     {
       thread_pool->size--;
       perror("pthread_create() error\n");
@@ -116,10 +116,10 @@ void pool_thread_terminate(thread_pool_t *thread_pool)
   */
   pthread_mutex_lock(&thread_pool->m);
 
-  if (thread_pool->size >= thread_pool->core_pool_size)
-    thread_pool->size--;
+  thread_pool->size--;
 
-  pthread_cond_broadcast(&thread_pool->v);
+  if (!thread_pool->size)
+    pthread_cond_broadcast(&thread_pool->v);
 
   pthread_mutex_unlock(&thread_pool->m);
 }

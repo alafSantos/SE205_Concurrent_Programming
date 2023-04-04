@@ -245,14 +245,11 @@ void *pool_thread_main(void *arg)
           There is no callable to handle after timeout, remove the current
           pool thread from the pool. If it is successful, terminate thread.
         */
-        struct timespec timeout; // relative delay
-        struct timeval timenow;  // absolute delay
+        gettimeofday(&tv_deadline, NULL);            // time now
+        TIMEVAL_TO_TIMESPEC(&tv_deadline, &ts_deadline); // from util.h
 
-        gettimeofday(&timenow, NULL);            // time now
-        TIMEVAL_TO_TIMESPEC(&timenow, &timeout); // from util.h
-
-        add_millis_to_timespec(&timeout, executor->keep_alive_time); // Add msec milliseconds to timespec ts (seconds, nanoseconds)
-        future = protected_buffer_poll(executor->futures, &timeout); // Extract an element from buffer (it waits no longer than timeout)
+        add_millis_to_timespec(&ts_deadline, executor->keep_alive_time); // Add msec milliseconds to timespec ts (seconds, nanoseconds)
+        future = protected_buffer_poll(executor->futures, &ts_deadline); // Extract an element from buffer (it waits no longer than timeout)
 
         if (future == NULL)
         {
@@ -274,21 +271,23 @@ void *pool_thread_main(void *arg)
     }
     else
     {
-      future->result = callable->main(callable->params);
+      // future->result = callable->main(callable->params);
 
       /*
         Wait for the next release time. Implement withFixedRate semantics.
         Note that current ts_deadline represents the start time of the
         current job and the deadline of the previous job.
       */
-      /*
-        Loop as long as there is no shutdown.
-      */
-      if (get_shutdown(executor->thread_pool))
+      while (!get_shutdown(executor->thread_pool))
       {
-        pool_thread_terminate(executor->thread_pool);
-        terminate = true;
+        gettimeofday(&tv_deadline, NULL);
+        TIMEVAL_TO_TIMESPEC(&tv_deadline, &ts_deadline);
+        add_millis_to_timespec(&ts_deadline, callable->period);
+        future->result = callable->main(callable->params);
+        delay_until(&ts_deadline);
       };
+      pool_thread_terminate(executor->thread_pool);
+      terminate = true;
     }
   }
   mtxprintf(pt_debug, "terminated\n");
