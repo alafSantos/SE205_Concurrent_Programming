@@ -246,11 +246,11 @@ void *pool_thread_main(void *arg)
           pool thread from the pool. If it is successful, terminate thread.
         */
         struct timespec timeout; // relative delay
-        struct timeval timenow; // absolute delay
-        
-        gettimeofday(&timenow, NULL); // time now
+        struct timeval timenow;  // absolute delay
+
+        gettimeofday(&timenow, NULL);            // time now
         TIMEVAL_TO_TIMESPEC(&timenow, &timeout); // from util.h
-        
+
         add_millis_to_timespec(&timeout, executor->keep_alive_time); // Add msec milliseconds to timespec ts (seconds, nanoseconds)
         future = protected_buffer_poll(executor->futures, &timeout); // Extract an element from buffer (it waits no longer than timeout)
 
@@ -314,6 +314,13 @@ void executor_shutdown(executor_t *executor)
     Add in future queue a shutdown future to unblock blocked threads and force
     their termination.
   */
+
+  /* Some threads can be blocked indefinitely waiting for callables or futures
+    (core threads or temp threads using an infinite keep_alive_time). */
+
+  future_t *future = &shutdown_future;
+  protected_buffer_add(executor->futures, future); // To unblock them, we must complete the code of executor_shutdown and add a shutdown future in the future queue.
+
   /*
     Wait for all threads to be deallocated.
   */
