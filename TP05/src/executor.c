@@ -66,7 +66,6 @@ future_t *submit_callable(executor_t *executor, callable_t *callable)
     result of the callable computation becames available. See
     function get_callable_result.
   */
-
   pthread_mutex_init(&future->m, NULL);
   pthread_cond_init(&future->v, NULL);
 
@@ -93,8 +92,6 @@ future_t *submit_callable(executor_t *executor, callable_t *callable)
   {
     protected_buffer_add(executor->futures, future);
     future = first;
-
-    pool_thread_create(executor->thread_pool, pool_thread_main, future, 0); // 1.5
   }
 
   /*
@@ -195,7 +192,7 @@ void *pool_thread_main(void *arg)
         for the result.
       */
       future->completed = true;
-      pthread_cond_broadcast(&future->v);
+      pthread_cond_signal(&future->v);
 
       /*
        For sanity reasons, initialize the next future to shutdown future in
@@ -245,7 +242,7 @@ void *pool_thread_main(void *arg)
           There is no callable to handle after timeout, remove the current
           pool thread from the pool. If it is successful, terminate thread.
         */
-        gettimeofday(&tv_deadline, NULL);            // time now
+        gettimeofday(&tv_deadline, NULL);                // time now
         TIMEVAL_TO_TIMESPEC(&tv_deadline, &ts_deadline); // from util.h
 
         add_millis_to_timespec(&ts_deadline, executor->keep_alive_time); // Add msec milliseconds to timespec ts (seconds, nanoseconds)
@@ -271,23 +268,20 @@ void *pool_thread_main(void *arg)
     }
     else
     {
-      // future->result = callable->main(callable->params);
-
-      /*
-        Wait for the next release time. Implement withFixedRate semantics.
-        Note that current ts_deadline represents the start time of the
-        current job and the deadline of the previous job.
-      */
-      while (!get_shutdown(executor->thread_pool))
+      callable->main(callable->params);
+      add_millis_to_timespec(&ts_deadline, callable->period);
+      delay_until(&ts_deadline);
+      
+      // /*
+      //   Wait for the next release time. Implement withFixedRate semantics.
+      //   Note that current ts_deadline represents the start time of the
+      //   current job and the deadline of the previous job.
+      // */
+      if (get_shutdown(executor->thread_pool))
       {
-        gettimeofday(&tv_deadline, NULL);
-        TIMEVAL_TO_TIMESPEC(&tv_deadline, &ts_deadline);
-        add_millis_to_timespec(&ts_deadline, callable->period);
-        future->result = callable->main(callable->params);
-        delay_until(&ts_deadline);
-      };
-      pool_thread_terminate(executor->thread_pool);
-      terminate = true;
+        pool_thread_terminate(executor->thread_pool);
+        terminate = true;
+      }
     }
   }
   mtxprintf(pt_debug, "terminated\n");
@@ -317,8 +311,7 @@ void executor_shutdown(executor_t *executor)
   /* Some threads can be blocked indefinitely waiting for callables or futures
     (core threads or temp threads using an infinite keep_alive_time). */
 
-  future_t *future = &shutdown_future;
-  protected_buffer_add(executor->futures, future); // To unblock them, we must complete the code of executor_shutdown and add a shutdown future in the future queue.
+  protected_buffer_add(executor->futures, &shutdown_future); // To unblock them, we must complete the code of executor_shutdown and add a shutdown future in the future queue.
 
   /*
     Wait for all threads to be deallocated.
